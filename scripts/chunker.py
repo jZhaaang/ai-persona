@@ -7,7 +7,7 @@ import tiktoken
 
 SCRIPTS_DIR = Path(__file__).parent
 DATA_DIR = (SCRIPTS_DIR / ".." / "data" / "clean").resolve()
-MAX_TOKENS = 200
+MAX_TOKENS = 300
 TIME_THRESHOLD = 5 * 60
 
 tokenizer = tiktoken.get_encoding("cl100k_base")
@@ -19,11 +19,11 @@ def load_json_data(path):
     return data
 
 
-def num_tokens(text: str) -> int:
+def num_tokens(text):
     return len(tokenizer.encode(text))
 
 
-def parse_timestamp(timestamp: str) -> datetime:
+def parse_timestamp(timestamp):
     return datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
 
 
@@ -53,7 +53,7 @@ def chunk_messages(msgs):
                 "author_ids": list(current_authors),
                 "start_timestamp": current_chunk[0]["timestamp"],
                 "end_timestamp": current_chunk[-1]["timestamp"],
-                "ref_chunks_id": last_chunk_id,
+                "ref_chunk_id": last_chunk_id,
             }
         )
         current_chunk = []
