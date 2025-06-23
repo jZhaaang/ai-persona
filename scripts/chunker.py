@@ -154,7 +154,6 @@ if __name__ == "__main__":
             if len(chunk["messages"]) > SUMMARY_THRESHOLD:
                 summary_count += 1
                 topic = summarize_chunk(chunk["messages"])
-                print(f"{chunk['chunk_id']}) - {topic}")
             else:
                 topic = "Short exchange"
             chunk["topic"] = topic
@@ -167,7 +166,7 @@ if __name__ == "__main__":
 
         size_mb = os.path.getsize(batch_path) / (1024 * 1024)
         print(
-            f"Saved batch {batch_num:03} with {len(finalized)} chunks to {batch_path} ({size_mb:.2f} MB)"
+            f"Saved batch {batch_num:03} with {len(finalized)} chunks and {summary_count} summaries to {batch_path} ({size_mb:.2f} MB)"
         )
 
     end_time = time.time()
