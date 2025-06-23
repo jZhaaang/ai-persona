@@ -11,7 +11,6 @@ load_dotenv(dotenv_path=ENV_PATH)
 SCRIPTS_DIR = Path(__file__).parent
 DATA_DIR = (SCRIPTS_DIR / ".." / "data").resolve()
 EMBED_DIR = DATA_DIR / "embed"
-TARGET_AUTHOR = "Abeyan"
 BATCH_SIZE = 50
 
 
@@ -41,27 +40,15 @@ def initialize_pinecone():
 if __name__ == "__main__":
     start_time = time.time()
     index = initialize_pinecone()
-    print(
-        f"Uploading embedded files from {EMBED_DIR}, filtered for '{TARGET_AUTHOR}' to namespace '{TARGET_AUTHOR.lower()}'"
-    )
+    print(f"Uploading embedded files from {EMBED_DIR}")
 
     for file in sorted(EMBED_DIR.glob("embedded_batch_*.json")):
         vectors = load_json_data(file)
 
-        filtered_vectors = [
-            v for v in vectors if TARGET_AUTHOR in v["metadata"]["author_names"]
-        ]
-
-        if not filtered_vectors:
-            print(f"No vectors for {TARGET_AUTHOR} in {file}, skipping.")
-            continue
-
-        print(
-            f"Uploading {len(vectors)} vectors from {file} to namespace '{TARGET_AUTHOR.lower()}'"
-        )
+        print(f"Uploading {len(vectors)} vectors from {file}")
         for i in range(0, len(vectors), BATCH_SIZE):
             batch = vectors[i : i + BATCH_SIZE]
-            index.upsert(batch, TARGET_AUTHOR.lower())
+            index.upsert(batch)
             print(f"Uploaded {len(batch)} vectors from batch {i}-{i + len(batch)}")
 
     end_time = time.time()
