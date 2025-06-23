@@ -49,9 +49,7 @@ if __name__ == "__main__":
         vectors = load_json_data(file)
 
         filtered_vectors = [
-            v
-            for v in vectors
-            if TARGET_AUTHOR in v.get("metadata", {}).get("author_names", [])
+            v for v in vectors if TARGET_AUTHOR in v["metadata"]["author_names"]
         ]
 
         if not filtered_vectors:
