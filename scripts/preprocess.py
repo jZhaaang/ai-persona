@@ -58,7 +58,7 @@ def filter_data(data, author_id=None):
 
 if __name__ == "__main__":
     filtered_messages = []
-    files = os.listdir(SOURCE_DIR)
+    files = [f"general{i}.json" for i in range(10, 17)] + ["thelads.json"]
     print(f"Filtering {len(files)} files in {SOURCE_DIR}")
 
     for file_name in files:
