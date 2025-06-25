@@ -1,7 +1,7 @@
 import json
-from config import RAW_DIR, CLEAN_DIR
+from config import RAW_DIR, PROCESSED_DIR, AUTHORS_PATH
 
-CLEAN_DIR.mkdir(parents=True, exist_ok=True)
+PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def load_json_data(path):
@@ -14,19 +14,17 @@ def write_json_data(path, data):
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
-def filter_data(data, author_id=None):
+def trim_data(data):
     msgs = data["messages"]
-    filtered = []
+    trimmed = []
 
     for msg in msgs:
         if msg["type"] != "Default" or msg["author"]["isBot"] is True:
             continue
-        if author_id and msg["author"]["id"] != author_id:
-            continue
         if not msg["content"].strip():
             continue
 
-        filtered.append(
+        trimmed.append(
             {
                 "message_id": msg["id"],
                 "author_id": msg["author"]["id"],
@@ -35,34 +33,40 @@ def filter_data(data, author_id=None):
             }
         )
 
-    return filtered
+    return trimmed
+
+
+def annotate_authors(msgs):
+    authors_map = load_json_data(AUTHORS_PATH)
+    for msg in msgs:
+        msg["author_name"] = authors_map.get(msg["author_id"], "Unknown")
+
+    return msgs
+
+
+def process_file(input_path):
+    raw_data = load_json_data(input_path)
+    trimmed = trim_data(raw_data)
+    processed = annotate_authors(trimmed)
+
+    output_name = input_path.stem + "_processed.json"
+    output_path = PROCESSED_DIR / output_name
+    write_json_data(output_path, processed)
+
+    size_mb = output_path.stat().st_size / (1024 * 1024)
+    print(f"Saved {len(processed)} messages to {output_path} ({size_mb:.2f} MB)")
 
 
 def main():
-    filtered_messages = []
-    files = [f"general{i}.json" for i in range(10, 17)] + ["thelads.json"]
-    print(f"Filtering {len(files)} files in {RAW_DIR}")
+    allowed_files = {f"general{n}" for n in range(10, 17)}
+    allowed_files.add("thelads")
 
-    for file_name in files:
-        if file_name.endswith(".json"):
-            file_path = RAW_DIR / file_name
-            print(f"Processing file: {file_name}")
-            try:
-                filtered = filter_data(load_json_data(file_path))
-                filtered_messages.extend(filtered)
-                print(f"Filtered {len(filtered)} messages")
-            except Exception as e:
-                print(f"Error processing {file_name}: {e}")
+    input_files = [f for f in RAW_DIR.glob("*.json") if f.stem in allowed_files]
+    print(f"Processing {len(input_files)} files in {RAW_DIR}")
 
-    filtered_messages.sort(key=lambda msg: msg["timestamp"])
-
-    output_path = CLEAN_DIR / "filtered_messages.json"
-    write_json_data(output_path, filtered_messages)
-
-    size_mb = output_path.stat().st_size / (1024 * 1024)
-    print(
-        f"Saved {len(filtered_messages)} messages to {output_path} ({size_mb:.2f} MB)"
-    )
+    for input_path in input_files:
+        print(f"Processing {input_path.name}...")
+        process_file(input_path)
 
 
 if __name__ == "__main__":
