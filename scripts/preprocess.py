@@ -17,7 +17,6 @@ def load_json_data(path):
 
 def filter_data(data, author_id=None):
     msgs = data["messages"]
-    msgs_lookup = {msg["id"]: msg for msg in msgs}
     filtered = []
 
     for msg in msgs:
@@ -28,27 +27,11 @@ def filter_data(data, author_id=None):
         if not msg["content"].strip():
             continue
 
-        mention_ids = [
-            mention["id"] for mention in msg.get("mentions", []) if "id" in mention
-        ]
-        reference_id = msg.get("refrence", {}).get("messageId")
-
-        referenced_msg = None
-        if reference_id and reference_id in msgs_lookup:
-            ref = msgs_lookup[reference_id]
-            referenced_msg = {
-                "message_id": ref["id"],
-                "author_id": ref["author"]["id"],
-                "content": msg["content"],
-            }
-
         filtered.append(
             {
                 "message_id": msg["id"],
                 "author_id": msg["author"]["id"],
                 "content": msg["content"],
-                "mentions": mention_ids,
-                "reference": referenced_msg,
                 "timestamp": msg["timestamp"],
             }
         )
