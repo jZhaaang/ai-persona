@@ -1,17 +1,8 @@
 import json
 from config import RAW_DIR, PROCESSED_DIR, AUTHORS_PATH
+from utils import load_json_data, write_json_data
 
 PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-
-
-def load_json_data(path):
-    with path.open("r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def write_json_data(path, data):
-    with path.open("w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
 
 
 def trim_data(data):
