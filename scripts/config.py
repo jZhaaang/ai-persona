@@ -7,6 +7,8 @@ SCRIPTS_DIR = PROJECT_DIR / "scripts"
 
 RAW_DIR = DATA_DIR / "raw"
 CLEAN_DIR = DATA_DIR / "clean"
+FILTERED_DIR = CLEAN_DIR / "filtered"
+CHUNKS_DIR = CLEAN_DIR / "chunks"
 EMBED_DIR = DATA_DIR / "embed"
 AUTHORS_PATH = DATA_DIR / "authors_map.json"
 ENV_PATH = PROJECT_DIR / ".env"
