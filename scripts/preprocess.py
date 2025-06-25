@@ -1,4 +1,4 @@
-import json
+from time import time
 from config import RAW_DIR, PROCESSED_DIR, AUTHORS_PATH
 from utils import load_json_data, write_json_data
 
@@ -61,4 +61,8 @@ def main():
 
 
 if __name__ == "__main__":
+    start_time = time()
     main()
+    end_time = time()
+    elapsed = end_time - start_time
+    print(f"\nScript finished in {elapsed:.2f} seconds ({elapsed / 60:.2f} minutes)")
