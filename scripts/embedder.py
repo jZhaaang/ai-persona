@@ -92,8 +92,8 @@ def main():
         print(f"Processing chunk file: {file_path}")
         chunks = load_json_data(file_path)
 
-        output_file = file_path.replace("_chunked", "_vectors")
-        output_path = VECTORS_DIR / f"{output_file}"
+        output_file = file_path.name.replace("_chunked", "_vectors")
+        output_path = VECTORS_DIR / output_file
         if output_path.exists():
             print(f"Output already exists for {file_path.name}, skipping")
             continue
