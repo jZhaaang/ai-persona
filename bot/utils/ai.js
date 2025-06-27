@@ -1,12 +1,16 @@
 const { OpenAI } = require("openai");
 const { Pinecone } = require("@pinecone-database/pinecone");
 const { encoding_for_model } = require("@dqbd/tiktoken");
-const axios = require("axios")
+const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const pinecone = new Pinecone({ apiKey: process.env.PINECONE_API_KEY});
 const index = pinecone.Index(process.env.PINECONE_INDEX);
 const encoder = encoding_for_model("gpt-4o");
+const promptPath = path.join(__dirname, "../prompts/abeyan_prompt.txt");
+const systemPrompt = fs.readFileSync(promptPath, "utf-8");
 
 function countTokens(req) {
   return req.reduce((total, msg) => {
@@ -38,10 +42,7 @@ async function getAIResponse(userPrompt) {
   const messages = [
       {
         role: "system",
-        content: "You're simulating the personality of a Discord user named Abeyan (aliases: nayebaa, I can't read the sing) using their past messages. "
-                + "You should respond to the user's prompt in the tone, grammar, and writing style of the character."
-                + "This means not as much grammer, punctuation, formalities, and never any emojis"
-                + "Follow the style of his existing messages in the context below, try your best please!"
+        content: systemPrompt
       },
       {
         role: "user",

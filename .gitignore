@@ -3,3 +3,4 @@
 data/
 scripts/__pycache__
 bot/node_modules/
+bot/prompts/
