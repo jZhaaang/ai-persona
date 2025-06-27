@@ -1,34 +1,15 @@
 import openai
-import json
 import os
 import tiktoken
 import time
 from dotenv import load_dotenv
-from pathlib import Path
+from config import ENV_PATH, CHUNKS_DIR, VECTORS_DIR, EMBED_MODEL, EMBED_BATCH_SIZE
+from utils import load_json_data, write_json_data
 
-ENV_PATH = Path(__file__).resolve().parents[1] / ".env"
+VECTORS_DIR.mkdir(parents=True, exist_ok=True)
 load_dotenv(dotenv_path=ENV_PATH)
-
 openai.api_key = os.getenv("OPENAI_API_KEY")
 tokenizer = tiktoken.get_encoding("cl100k_base")
-
-EMBED_MODEL = "text-embedding-3-small"
-SCRIPTS_DIR = Path(__file__).parent
-DATA_DIR = (SCRIPTS_DIR / ".." / "data").resolve()
-CHUNKS_DIR = DATA_DIR / "clean" / "chunks"
-OUTPUT_DIR = os.path.join(DATA_DIR, "embed")
-BATCH_SIZE = 50
-
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-
-def load_json_data(path):
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def count_tokens(texts):
-    return sum(len(tokenizer.encode(text)) for text in texts)
 
 
 def embed_messages(msgs, retries=3):
@@ -44,69 +25,64 @@ def embed_messages(msgs, retries=3):
             raise
 
 
-if __name__ == "__main__":
-    start_time = time.time()
-    authors_file = os.path.join(DATA_DIR, "authors_map.json")
-    authors = load_json_data(authors_file)
+def create_vectors(chunks):
+    vectors = []
+    print(f"Creating vectors for {len(chunks)} chunks")
 
-    chunk_files = sorted(CHUNKS_DIR.glob("chunked_batch_*.json"))
-    total_chunks = 0
-    total_token_count = 0
+    for i in range(0, len(chunks), EMBED_BATCH_SIZE):
+        batch = chunks[i : i + EMBED_BATCH_SIZE]
+        msgs = [
+            f"Keywords: {chunk['keywords']}\n"
+            + "\n".join(
+                f"{msg['author_name']}: {msg['content']}" for msg in chunk["messages"]
+            )
+            for chunk in batch
+        ]
 
-    for file in chunk_files:
-        print(f"Processing batch file: {file}")
-        batch_name = file.stem.replace("chunked_", "")
-        embed_path = Path(OUTPUT_DIR) / f"embedded_{batch_name}.json"
+        print(f"Embedding batch {i}-{i + len(batch)}")
+        embeddings = embed_messages(msgs)
 
-        if embed_path.exists():
-            print(f"Embed batch {batch_name} already exists. Skipping.")
+        for chunk, embedding, msg in zip(batch, embeddings, msgs):
+            vectors.append(
+                {
+                    "id": chunk["chunk_id"],
+                    "values": embedding,
+                    "metadata": {
+                        "keywords": chunk["keywords"],
+                        "author_names": chunk["author_names"],
+                        "text": msg,
+                    },
+                }
+            )
+
+    return vectors
+
+
+def main():
+    # embed every conversation chunk file
+    for file_path in CHUNKS_DIR.glob("*_chunked*.json"):
+        print(f"Processing chunk file: {file_path}")
+        chunks = load_json_data(file_path)
+
+        output_file = file_path.replace("_chunked", "_vectors")
+        output_path = VECTORS_DIR / f"{output_file}"
+        if output_path.exists():
+            print(f"Output already exists for {file_path.name}, skipping")
             continue
 
-        chunks = load_json_data(file)
-        vectors = []
+        # create vectors with embeddings
+        vectors = create_vectors(chunks)
 
-        for i in range(0, len(chunks), BATCH_SIZE):
-            batch = chunks[i : i + BATCH_SIZE]
-            msgs = [
-                f"Topic: {chunk['topic']}\n"
-                + "\n".join(
-                    f"{msg['author_name']}: {msg['content']}"
-                    for msg in chunk["messages"]
-                )
-                for chunk in batch
-            ]
-
-            token_count = count_tokens(msgs)
-            total_token_count += token_count
-
-            print(f"Embedding batch {i}-{i + len(batch)}, ({token_count} tokens)")
-            embeddings = embed_messages(msgs)
-
-            for chunk, embedding, msg in zip(batch, embeddings, msgs):
-                vectors.append(
-                    {
-                        "id": chunk["chunk_id"],
-                        "values": embedding,
-                        "metadata": {
-                            "topic": chunk["topic"],
-                            "author_names": chunk["author_names"],
-                            "text": msg,
-                        },
-                    }
-                )
-
-        total_chunks += len(chunks)
-        with embed_path.open("w", encoding="utf-8") as f:
-            json.dump(vectors, f, indent=2, ensure_ascii=False)
-
-        size_mb = os.path.getsize(embed_path) / (1024 * 1024)
+        write_json_data(output_path, vectors)
+        size_mb = os.path.getsize(output_path) / (1024 * 1024)
         print(
-            f"Saved batch {batch_name} with {len(vectors)} vectors to {embed_path} ({size_mb:.2f} MB)"
+            f"Saved chunk {file_path} with {len(vectors)} vectors to {output_path} ({size_mb:.2f} MB)"
         )
 
+
+if __name__ == "__main__":
+    start_time = time.time()
+    main()
     end_time = time.time()
     elapsed = end_time - start_time
     print(f"\nScript finished in {elapsed:.2f} seconds ({elapsed / 60:.2f} minutes)")
-    print(
-        f"Finished embedding {total_chunks} chunks, total of {total_token_count} tokens"
-    )
