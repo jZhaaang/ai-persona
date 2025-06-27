@@ -14,7 +14,7 @@ AUTHORS_PATH = DATA_DIR / "authors_map.json"
 ENV_PATH = PROJECT_DIR / ".env"
 
 CHUNK_MODEL = "gpt-4o-mini"
-MAX_BATCH_MSGS = 30000
+MAX_BATCH_MSGS = 10000
 CHUNK_BATCH_SIZE = 250
 EMBED_MODEL = "text-embedding-3-small"
 EMBED_BATCH_SIZE = 50
