@@ -1,22 +1,11 @@
-import json
 import os
 import time
-from pathlib import Path
-from pinecone import Pinecone, ServerlessSpec
 from dotenv import load_dotenv
+from pinecone import Pinecone, ServerlessSpec
+from config import ENV_PATH, VECTORS_DIR, UPLOAD_BATCH_SIZE
+from utils import load_json_data
 
-ENV_PATH = Path(__file__).resolve().parents[1] / ".env"
 load_dotenv(dotenv_path=ENV_PATH)
-
-SCRIPTS_DIR = Path(__file__).parent
-DATA_DIR = (SCRIPTS_DIR / ".." / "data").resolve()
-EMBED_DIR = DATA_DIR / "embed"
-BATCH_SIZE = 50
-
-
-def load_json_data(path):
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
 
 
 def initialize_pinecone():
@@ -37,20 +26,23 @@ def initialize_pinecone():
     return pc.Index(pinecone_index_name)
 
 
-if __name__ == "__main__":
-    start_time = time.time()
+def main():
     index = initialize_pinecone()
-    print(f"Uploading embedded files from {EMBED_DIR}")
+    print(f"Uploading vector files from {VECTORS_DIR}")
 
-    for file in sorted(EMBED_DIR.glob("embedded_batch_*.json")):
+    for file in sorted(VECTORS_DIR.glob("*_vectors*.json")):
         vectors = load_json_data(file)
 
         print(f"Uploading {len(vectors)} vectors from {file}")
-        for i in range(0, len(vectors), BATCH_SIZE):
-            batch = vectors[i : i + BATCH_SIZE]
+        for i in range(0, len(vectors), UPLOAD_BATCH_SIZE):
+            batch = vectors[i : i + UPLOAD_BATCH_SIZE]
             index.upsert(batch)
             print(f"Uploaded {len(batch)} vectors from batch {i}-{i + len(batch)}")
 
+
+if __name__ == "__main__":
+    start_time = time.time()
+    main()
     end_time = time.time()
     elapsed = end_time - start_time
     print(f"\nScript finished in {elapsed:.2f} seconds ({elapsed / 60:.2f} minutes)")
