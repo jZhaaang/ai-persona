@@ -77,6 +77,7 @@ def create_vectors(chunks):
                         "keywords": chunk["keywords"],
                         "author_names": chunk["author_names"],
                         "text": msg,
+                        "message_count": len(chunk["messages"]),
                     },
                 }
             )
