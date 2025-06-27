@@ -86,7 +86,7 @@ def validate_jsonl(jsonl_path):
     with jsonl_path.open("r", encoding="utf-8") as f:
         for i, line in enumerate(f, start=1):
             try:
-                obj = json.loads(line)
+                _ = json.loads(line)
             except json.JSONDecodeError as e:
                 print(f"[Line {i}] JSON decode error: {e}")
                 errors += 1
