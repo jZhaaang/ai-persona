@@ -97,11 +97,11 @@ def validate_jsonl(jsonl_path):
         print(f"{jsonl_path.name}: {errors} invalid lines found")
 
 
-def submit_batch_request(jsonl_path, retries=3):
+def submit_batch_request(jsonl_path, retries=0):
     print(f"Submitting batch job: {jsonl_path.name}")
     if not jsonl_path.exists():
         print(f"[ERROR] {jsonl_path.name} not found")
-        return
+        return False
 
     batch_input_file = client.files.create(file=open(jsonl_path, "rb"), purpose="batch")
 
@@ -115,12 +115,13 @@ def submit_batch_request(jsonl_path, retries=3):
         print(f"Submitted batch job with ID: {response.id}")
         wait_for_batch(response.id)
         save_batch_output(response.id)
+        return True
     except Exception as e:
         print(f"Failed to submit batch: {e}")
         if retries > 0:
             print("Waiting 5 minutes to clear up queue then retrying...")
             time.sleep(5 * 60)
-            submit_batch_request(jsonl_path, retries - 1)
+            return submit_batch_request(jsonl_path, retries - 1)
 
 
 def wait_for_batch(batch_id, poll_interval=30):
@@ -215,6 +216,9 @@ def main():
             )
 
     # submit jsonl batches and save output
+    completed = []
+    failed = []
+
     for jsonl_path in BATCH_DIR.glob("*_batch*.jsonl"):
         batch_prefix = jsonl_path.stem.replace("processed_batch", "chunked")
         output_path = CHUNKS_DIR / f"{batch_prefix}.json"
@@ -225,7 +229,18 @@ def main():
             )
             continue
 
-        submit_batch_request(jsonl_path)
+        if submit_batch_request(jsonl_path):
+            completed.append(jsonl_path)
+        else:
+            failed.append(jsonl_path)
+
+    print("\n--- Batch Submissions ---")
+    print(f"Completed ({len(completed)}):")
+    for file in completed:
+        print(f"  - {file}")
+    print(f"\nFailed ({len(failed)})")
+    for file in failed:
+        print(f"  - {file}")
 
 
 if __name__ == "__main__":
