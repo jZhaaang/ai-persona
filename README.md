@@ -37,6 +37,7 @@ ai-persona/
 ```
 
 ### Scripts
+![image](https://github.com/user-attachments/assets/c059b794-6cdd-489d-bb77-93d26350abe6)
 #### `preprocess.py`
 Processes raw exported Discord messages and trims irrelevant attributes.
 #### `chunker.py`
@@ -60,6 +61,7 @@ Here, `prompt` is a formatted array of messages in the form: `[{message_id}] ({t
 The chunked conversations are embedded based on keywords and conversation messages. The conversation messages are, again, formatted in a readable way: `{author_name}: {content}`. With the embedding values, vector data is created consisting of the embeddings and keyword, authors, and messages metadata then uploaded to Pinecone.
 
 ### Bot
+![image](https://github.com/user-attachments/assets/8eacf252-f861-4ff6-b636-3a41590e49b3)
 #### `messageCreate.js`
 The Discord bot consists of one `MessageCreate` event listener which listens for messages that **@mention** or **reply** to the bot. A map of message history between the user and bot is kept using the user's ID as a key. If a user is replying to the bot, it will poll this map and append the user's current message to the message history for more context on the current conversation. If there is no reply to the bot, the user's message is directly passed to the `ai.js` util to generate a response. Once a response is generated, the pair of messages between the user and the bot are saved to the map of message history for the user.
 #### `ai.js`
